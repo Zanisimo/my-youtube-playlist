@@ -10,7 +10,7 @@
 	"dependencies": {
 	    "socket.io": "0.9.10",
 	    "express": "3.0.0"
-	  }
+	  },
 	"keywords": [
 		"youtube",
 		"playlist"
