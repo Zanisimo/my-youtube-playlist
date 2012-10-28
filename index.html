@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+
+<html>
+	<head>
+	</head>
+
+	<body>
+		<div id="player"></div>
+
+		<input id="input" type="text" />
+		<input id="check" type="checkbox" />
+
+		<script src="http://www.youtube.com/player_api"></script>
+		<script src="/socket.io/socket.io.js"></script>
+
+		<script>
+			var player, socket, 
+				input    = document.getElementById('input'),
+				playlist = [];
+
+			input.addEventListener('keydown', function (e) {
+				var val = input.value.trim();
+
+				if (e.keyCode === 13) {
+					socket.emit('newVid', val);
+
+					playlist.push(val);
+
+					if (!player || player.getPlayerState() !== 1) {
+					    insertNewVid(playlist[0]);
+
+					    if (document.getElementById('check').checked && player.playVideo) {
+							player.playVideo();
+						}
+					}
+
+					input.value = '';
+				}
+			});
+
+			function onYouTubePlayerAPIReady() {
+				console.log(location.href);
+
+				socket = io.connect(location.href);
+
+				socket.on('connect', function () {
+					console.log('connect');
+				})
+
+				socket.on('init', function (list) {
+					playlist = list;
+
+					console.log('init');
+
+					if (playlist[0]) {
+					    insertNewVid(playlist[0]);
+					}
+				});
+
+				socket.on('newVid', function (vid) {
+					playlist.push(vid);
+
+					if (!player || player.getPlayerState() !== 1) {
+					    insertNewVid(playlist[0]);
+
+					    if (document.getElementById('check').checked) {
+							player.playVideo();
+						}
+					}
+				});
+
+				socket.on('shiftPlaylist', function (vid) {
+					playlist.shift();
+				});
+			}
+
+			function insertNewVid(vidId) {
+				if (player) {
+				    player.loadVideoById(vidId);
+					return;
+				}
+
+				player = new YT.Player('player', {
+					height  : '390',
+					width   : '640',
+					videoId : vidId,
+					events  : {
+						'onReady'       : onPlayerReady,
+						'onStateChange' : onPlayerStateChange
+					}
+				});
+			}
+
+			// autoplay video
+			function onPlayerReady(event) {
+				if (document.getElementById('check').checked) {
+					event.target.playVideo();
+				}
+			}
+
+			// when video ends
+			function onPlayerStateChange(event) {
+				if ( (event.data === 0 ) && playlist[0] ) {
+					playlist.shift();
+
+					socket.emit('shiftPlaylist');
+					insertNewVid(playlist[0]);
+				}
+			}
+		</script>
+	</body>
+</html>
