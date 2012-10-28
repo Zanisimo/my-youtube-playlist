@@ -1,2 +1,2 @@
-my-youtube-playliste
+my-youtube-playlist
 ====================
